@@ -11,9 +11,16 @@ WORKDIR /app
 # Pourquoi ? Docker met en cache chaque étape. Si package.json n'a pas changé,
 # Docker réutilise le cache et skip le npm ci → build beaucoup plus rapide.
 COPY package*.json ./
+
 # npm ci installe les versions exactes du package-lock.json (contrairement à
 # npm install qui peut résoudre des versions différentes). Ça garantit un
 # build reproductible à chaque fois.
+# Note : le script "postinstall" dans package.json exécute automatiquement
+# "prisma generate" après l'installation. Cette commande génère le client
+# Prisma (le code qui permet de communiquer avec la base de données).
+# Pour que ça fonctionne, Prisma a besoin du fichier schema.prisma,
+# c'est pourquoi on le copie AVANT le npm ci.
+COPY prisma ./prisma
 RUN npm ci
 
 # On copie ensuite le code source et on compile TypeScript → JavaScript.
@@ -32,9 +39,11 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-# On réinstalle uniquement les dépendances de production (--omit=dev),
-# ce qui exclut TypeScript et les autres outils de build devenus inutiles.
+# On réinstalle uniquement les dépendances de production (--omit=dev).
+# Là aussi, Prisma a besoin du schema pour générer le client,
+# donc on copie le dossier prisma avant l'installation.
 COPY package*.json ./
+COPY prisma ./prisma
 RUN npm ci --omit=dev
 
 # On récupère le dossier dist/ depuis l'étape 1 (nommée "build").
@@ -43,7 +52,7 @@ COPY --from=build /app/dist ./dist
 
 # Documente le port exposé par le conteneur (informatif, ne fait pas de mapping).
 # Le mapping réel se fera dans docker-compose.yml ou via docker run -p.
-EXPOSE 3000
+EXPOSE 3001
 
 # Commande exécutée au démarrage du conteneur.
 CMD ["node", "dist/index.js"]
