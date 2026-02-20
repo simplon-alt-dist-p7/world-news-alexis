@@ -11,7 +11,7 @@
 		// See also https://aka.ms/tsconfig/module
 		"module": "nodenext",
 		"target": "esnext",
-		"types": ["node"],
+		"types": ["node", "vitest/globals"],
 		// For nodejs:
 		// "lib": ["esnext"],
 		// "types": ["node"],
@@ -42,5 +42,6 @@
 		"noUncheckedSideEffectImports": true,
 		"moduleDetection": "force",
 		"skipLibCheck": true
-	}
+	},
+	"exclude": ["vitest.config.ts"]
 }
