@@ -45,6 +45,7 @@ describe("Schema getArticleById", () => {
 		[-1, "L'ID doit être positif", "négatif"],
 		[0, "L'ID doit être positif", "zéro (borne)"],
 		[1.5, "L'ID doit être un entier", "décimal"],
+		[undefined, "L'ID est requis", "absent"],
 	])("id = %s → erreur '%s' (%s)", (id, expectedMessage, _label) => {
 		// ACT
 		const { error } = getArticleByIdSchema.validate({ id });
