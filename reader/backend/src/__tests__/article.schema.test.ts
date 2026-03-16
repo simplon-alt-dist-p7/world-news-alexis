@@ -8,6 +8,22 @@
 //
 // Pas de base de données, pas de serveur : ce sont des tests unitaires purs.
 // =============================================================================
+//
+// TESTS PARAMÉTRÉS (it.each) :
+//
+// Les cas d'erreur suivent tous le même pattern : on passe une valeur
+// invalide et on vérifie le message d'erreur Joi correspondant.
+// Au lieu d'écrire 4 tests quasi-identiques, on factorise avec it.each.
+// Chaque ligne du tableau produit un test distinct dans le rapport.
+//
+// TESTS DE BORNES (boundary testing) :
+//
+// Le schéma Joi utilise .positive() qui signifie "strictement > 0".
+// On teste donc id = 0 (la frontière exacte) en plus de id = -1.
+// C'est un cas classique d'off-by-one : positive() rejette 0,
+// mais un développeur pourrait confondre avec "non-négatif" (>= 0).
+//
+// =============================================================================
 
 import { getArticleByIdSchema } from "../schemas/article.schema.js";
 
@@ -22,32 +38,20 @@ describe("Schema getArticleById", () => {
 		expect(error).toBeUndefined();
 	});
 
-	// ─── Error paths ─────────────────────────────────────────────────────
+	// ─── Error paths (paramétrés) ────────────────────────────────────────
 
-	it("id string → erreur 'doit être un nombre'", () => {
+	it.each([
+		["abc", "L'ID doit être un nombre", "string"],
+		[-1, "L'ID doit être positif", "négatif"],
+		[0, "L'ID doit être positif", "zéro (borne)"],
+		[1.5, "L'ID doit être un entier", "décimal"],
+		[undefined, "L'ID est requis", "absent"],
+	])("id = %s → erreur '%s' (%s)", (id, expectedMessage, _label) => {
 		// ACT
-		const { error } = getArticleByIdSchema.validate({ id: "abc" });
+		const { error } = getArticleByIdSchema.validate({ id });
 
 		// ASSERT
 		expect(error).toBeDefined();
-		expect(error?.details[0].message).toBe("L'ID doit être un nombre");
-	});
-
-	it("id négatif → erreur 'doit être positif'", () => {
-		// ACT
-		const { error } = getArticleByIdSchema.validate({ id: -1 });
-
-		// ASSERT
-		expect(error).toBeDefined();
-		expect(error?.details[0].message).toBe("L'ID doit être positif");
-	});
-
-	it("id décimal → erreur 'doit être un entier'", () => {
-		// ACT
-		const { error } = getArticleByIdSchema.validate({ id: 1.5 });
-
-		// ASSERT
-		expect(error).toBeDefined();
-		expect(error?.details[0].message).toBe("L'ID doit être un entier");
+		expect(error?.details[0].message).toBe(expectedMessage);
 	});
 });

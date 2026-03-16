@@ -122,15 +122,29 @@ describe("Gemini API (service externe mocké)", () => {
 			expect(mockGenerateContent).not.toHaveBeenCalled();
 		});
 
-		it("body trop court (< 50 chars) → 400 (validation service)", async () => {
-			// Le controller laisse passer (body est truthy), mais le SERVICE
-			// détecte que body.trim().length < 50 et lève une ValidationError.
+		// ─── Tests de bornes — seuil minimum de 50 caractères ─────────────
+		//
+		// Le service fait : if (body.trim().length < 50) → erreur.
+		// Donc un body de 49 chars doit échouer, et un body de 50 chars
+		// doit être accepté. On teste la frontière exacte pour détecter
+		// un éventuel bug off-by-one (< vs <=).
+		//
+		// On utilise it.each pour factoriser les cas de bornes :
+		// chaque ligne du tableau produit un test distinct.
+		//
+
+		it.each([
+			[49, 400],
+			[50, 200],
+		])("body de %i chars → %i (borne du seuil minimum)", async (length, expectedStatus) => {
+			mockGeminiResponse("Titre généré");
+			const body = "a".repeat(length);
+
 			const res = await request(app)
 				.post("/api/gemini/generate-titre")
-				.send({ body: "Texte trop court" });
+				.send({ body });
 
-			expect(res.status).toBe(400);
-			expect(mockGenerateContent).not.toHaveBeenCalled();
+			expect(res.status).toBe(expectedStatus);
 		});
 	});
 });
