@@ -41,6 +41,13 @@
 // un bug que si on avait copié-collé le if() avec une faute de frappe,
 // ce qui n'est pas un scénario réaliste.
 //
+// EXCEPTION : les tests de bornes (boundary testing) plus bas testent
+// CHAQUE champ individuellement. Ce n'est pas une contradiction : ici on
+// parle de patterns (champ vide, champ manquant = même if()). Les bornes
+// vérifient des VALEURS NUMÉRIQUES en dur (300, 300, 1000) qui sont
+// indépendantes d'un champ à l'autre. Un dev qui écrit > 3000 au lieu
+// de > 300 pour subtitle ne casse aucun autre test sans borne dédiée.
+//
 // =============================================================================
 //
 // CONVENTION DE NOMMAGE : <condition> → <résultat attendu>
