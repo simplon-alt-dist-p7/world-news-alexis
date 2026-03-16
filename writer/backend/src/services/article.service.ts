@@ -9,7 +9,7 @@ import type {
 
 class ArticleService {
 	async getArticleById(id: number): Promise<Article | null> {
-		return await articleRepository.findById(id);
+		return articleRepository.findById(id);
 	}
 
 	async createArticle(data: CreateArticleDTO): Promise<Article> {
@@ -61,7 +61,7 @@ class ArticleService {
 			categoryId: data.categoryId,
 		};
 
-		return await articleRepository.create(sanitizedData);
+		return articleRepository.create(sanitizedData);
 	}
 
 	async updateArticle(
@@ -129,10 +129,9 @@ class ArticleService {
 			sanitizedData.category = { id: data.categoryId } as Category;
 		}
 
-		// Mise à jour de la date de modification (en UTC)
-		sanitizedData.update_date = new Date(new Date().toISOString());
+		sanitizedData.update_date = new Date();
 
-		return await articleRepository.update(id, sanitizedData);
+		return articleRepository.update(id, sanitizedData);
 	}
 
 	async softDeleteArticle(id: number): Promise<Article | null> {

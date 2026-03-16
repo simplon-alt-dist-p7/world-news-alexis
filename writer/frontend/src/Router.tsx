@@ -17,7 +17,7 @@ const router = createBrowserRouter([
 		children: [
 			{
 				path: "/",
-				element: <Navigate to="/articles" replace />, // En attendant d'avoir une vrai epage d'accueil
+				element: <Navigate to="/articles" replace />, // En attendant une vraie page d'accueil
 			},
 			{
 				path: "/articles",

@@ -10,7 +10,7 @@ class CategoryRepository {
 	}
 
 	async findById(id: number): Promise<Category | null> {
-		return await this.repository.findOneBy({ id });
+		return this.repository.findOneBy({ id });
 	}
 }
 

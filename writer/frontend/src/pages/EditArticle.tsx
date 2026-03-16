@@ -33,6 +33,8 @@ export default function EditArticle() {
 	}>({ isOpen: false, title: "", message: "", type: "info" });
 
 	useEffect(() => {
+		const controller = new AbortController();
+
 		const loadArticle = async () => {
 			if (!id) {
 				setError("ID d'article manquant");
@@ -41,7 +43,10 @@ export default function EditArticle() {
 			}
 
 			try {
-				const response = await articleService.getArticleById(Number(id));
+				const response = await articleService.getArticleById(
+					Number(id),
+					controller.signal,
+				);
 				const article = response.data;
 				setFormData({
 					title: article.title,
@@ -51,6 +56,7 @@ export default function EditArticle() {
 					category_id: article.category?.id || 0,
 				});
 			} catch (err) {
+				if (err instanceof Error && err.name === "AbortError") return;
 				setError(
 					err instanceof Error
 						? err.message
@@ -62,6 +68,7 @@ export default function EditArticle() {
 		};
 
 		loadArticle();
+		return () => controller.abort();
 	}, [id]);
 
 	const handleSubmit = async (e: FormEvent) => {

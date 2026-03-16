@@ -3,7 +3,7 @@ import { categoryRepository } from "../repositories/category.repository.js";
 
 class CategoryService {
 	async getCategoryById(id: number): Promise<Category | null> {
-		return await categoryRepository.findById(id);
+		return categoryRepository.findById(id);
 	}
 }
 
