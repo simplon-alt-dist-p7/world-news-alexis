@@ -91,7 +91,7 @@ export default function ArticleList() {
 				</p>
 			</header>
 
-			<search className="toolbar">
+			<nav className="toolbar" aria-label="Outils de recherche">
 				<SearchBar
 					query={query}
 					onQueryChange={setQuery}
@@ -102,7 +102,7 @@ export default function ArticleList() {
 						{pagination.total} article{pagination.total > 1 ? "s" : ""} au total
 					</output>
 				)}
-			</search>
+			</nav>
 
 			{loading ? (
 				<figure className="loading-state" aria-busy="true">

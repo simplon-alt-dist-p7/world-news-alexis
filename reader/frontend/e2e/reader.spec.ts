@@ -42,7 +42,7 @@ test.describe("Reader — parcours utilisateur", () => {
 
 		// ASSERT — le titre est affiché sur la page de détail
 		await expect(
-			page.getByRole("heading", { name: firstArticleTitle! }),
+			page.getByRole("heading", { name: firstArticleTitle ?? "" }),
 		).toBeVisible();
 
 		// ASSERT — le lien de retour est présent

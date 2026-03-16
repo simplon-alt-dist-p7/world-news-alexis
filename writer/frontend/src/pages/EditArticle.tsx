@@ -131,12 +131,12 @@ export default function EditArticle() {
 	if (loadingArticle) {
 		return (
 			<section className={styles.container}>
-				<article className={styles.card}>
+				<section className={styles.card}>
 					<figure className={styles.loadingState} aria-busy="true">
 						<span className={styles.loadingSpinner} aria-hidden="true" />
 						<figcaption>Chargement de l'article...</figcaption>
 					</figure>
-				</article>
+				</section>
 			</section>
 		);
 	}
@@ -144,7 +144,7 @@ export default function EditArticle() {
 	return (
 		<>
 			<section className={styles.container} aria-labelledby="edit-title">
-				<article className={styles.card}>
+				<section className={styles.card}>
 					<header className={styles.header}>
 						<h1 id="edit-title" className={styles.title}>
 							Modifier l'article
@@ -166,7 +166,7 @@ export default function EditArticle() {
 						error={error}
 						success={success}
 					/>
-				</article>
+				</section>
 			</section>
 			<Modal
 				isOpen={modal.isOpen}

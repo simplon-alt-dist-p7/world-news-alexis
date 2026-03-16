@@ -92,7 +92,7 @@ export default function CreateArticle() {
 	return (
 		<>
 			<section className={styles.container} aria-labelledby="create-title">
-				<article className={styles.card}>
+				<section className={styles.card}>
 					<header className={styles.header}>
 						<h1 id="create-title" className={styles.title}>
 							Nouvel article
@@ -114,7 +114,7 @@ export default function CreateArticle() {
 						error={error}
 						success={success}
 					/>
-				</article>
+				</section>
 			</section>
 			<Modal
 				isOpen={modal.isOpen}

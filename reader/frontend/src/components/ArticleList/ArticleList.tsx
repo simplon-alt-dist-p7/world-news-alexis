@@ -43,30 +43,34 @@ function ArticleList() {
 
 	if (error) {
 		return (
-			<div className="empty-state">
-				<p className="empty-state__icon">😕</p>
+			<aside className="empty-state" role="alert">
+				<p className="empty-state__icon" aria-hidden="true">
+					😕
+				</p>
 				<p className="empty-state__message">Oups ! Une erreur est survenue</p>
 				<p className="empty-state__detail">{error}</p>
-			</div>
+			</aside>
 		);
 	}
 
 	if (!articles || articles.length === 0) {
 		return (
-			<div className="empty-state">
-				<p className="empty-state__icon">📰</p>
-				<p className="empty-state__message">
-					Aucun article disponible pour le moment
+			<figure className="empty-state">
+				<p className="empty-state__icon" aria-hidden="true">
+					📰
 				</p>
+				<figcaption className="empty-state__message">
+					Aucun article disponible pour le moment
+				</figcaption>
 				<p className="empty-state__detail">
 					Revenez bientôt pour découvrir nos dernières actualités !
 				</p>
-			</div>
+			</figure>
 		);
 	}
 
 	return (
-		<section className="articles-grid">
+		<section className="articles-grid" aria-label="Liste des articles">
 			{articles.map((article) => (
 				<Link
 					key={article.id}

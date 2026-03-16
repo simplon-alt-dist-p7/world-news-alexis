@@ -30,7 +30,7 @@ describe("Schema getArticleById", () => {
 
 		// ASSERT
 		expect(error).toBeDefined();
-		expect(error!.details[0].message).toBe("L'ID doit être un nombre");
+		expect(error?.details[0].message).toBe("L'ID doit être un nombre");
 	});
 
 	it("id négatif → erreur 'doit être positif'", () => {
@@ -39,7 +39,7 @@ describe("Schema getArticleById", () => {
 
 		// ASSERT
 		expect(error).toBeDefined();
-		expect(error!.details[0].message).toBe("L'ID doit être positif");
+		expect(error?.details[0].message).toBe("L'ID doit être positif");
 	});
 
 	it("id décimal → erreur 'doit être un entier'", () => {
@@ -48,6 +48,6 @@ describe("Schema getArticleById", () => {
 
 		// ASSERT
 		expect(error).toBeDefined();
-		expect(error!.details[0].message).toBe("L'ID doit être un entier");
+		expect(error?.details[0].message).toBe("L'ID doit être un entier");
 	});
 });

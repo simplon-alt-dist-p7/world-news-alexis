@@ -21,11 +21,11 @@
 
 import "reflect-metadata";
 import cors from "cors";
-import type { Request, Response } from "express";
 import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import { errorHandler } from "./middlewares/error-handler.middleware.js";
+import healthRoutes from "./routes/health.route.js";
 import routes from "./routes/index.js";
 
 const app = express();
@@ -52,18 +52,8 @@ app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
 // Routes
+app.use(healthRoutes);
 app.use("/api", routes);
-
-app.get("/", (req: Request, res: Response) => {
-	res.json({
-		message: "Bienvenue sur l'API wm-rajar-ms_writer",
-		status: "running",
-	});
-});
-
-app.get("/health", (req: Request, res: Response) => {
-	res.json({ status: "ok", timestamp: new Date().toISOString() });
-});
 
 app.use((_req, res) => {
 	res.status(404).json({ error: "Route non trouvée" });
