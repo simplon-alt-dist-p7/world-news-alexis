@@ -32,7 +32,7 @@ export default function StatusToggle({
 	};
 
 	return (
-		<label className="status-toggle-container">
+		<fieldset className="status-toggle-container">
 			<button
 				type="button"
 				role="switch"
@@ -53,6 +53,6 @@ export default function StatusToggle({
 			>
 				{isLoading ? "..." : isActive ? "Actif" : "Inactif"}
 			</output>
-		</label>
+		</fieldset>
 	);
 }

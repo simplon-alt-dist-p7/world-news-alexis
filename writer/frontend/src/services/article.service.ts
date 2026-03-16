@@ -2,8 +2,11 @@ import { api } from "../api/api";
 import type { Article, CreateArticleDTO } from "../types/article.types";
 
 export const articleService = {
-	getArticleById: async (id: number): Promise<{ data: Article }> => {
-		return api.get<{ data: Article }>(`/articles/${id}`);
+	getArticleById: async (
+		id: number,
+		signal?: AbortSignal,
+	): Promise<{ data: Article }> => {
+		return api.get<{ data: Article }>(`/articles/${id}`, undefined, { signal });
 	},
 
 	createArticle: async (

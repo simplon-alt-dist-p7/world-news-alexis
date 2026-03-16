@@ -33,6 +33,8 @@ export default function EditArticle() {
 	}>({ isOpen: false, title: "", message: "", type: "info" });
 
 	useEffect(() => {
+		const controller = new AbortController();
+
 		const loadArticle = async () => {
 			if (!id) {
 				setError("ID d'article manquant");
@@ -41,7 +43,10 @@ export default function EditArticle() {
 			}
 
 			try {
-				const response = await articleService.getArticleById(Number(id));
+				const response = await articleService.getArticleById(
+					Number(id),
+					controller.signal,
+				);
 				const article = response.data;
 				setFormData({
 					title: article.title,
@@ -51,6 +56,7 @@ export default function EditArticle() {
 					category_id: article.category?.id || 0,
 				});
 			} catch (err) {
+				if (err instanceof Error && err.name === "AbortError") return;
 				setError(
 					err instanceof Error
 						? err.message
@@ -62,6 +68,7 @@ export default function EditArticle() {
 		};
 
 		loadArticle();
+		return () => controller.abort();
 	}, [id]);
 
 	const handleSubmit = async (e: FormEvent) => {
@@ -131,12 +138,12 @@ export default function EditArticle() {
 	if (loadingArticle) {
 		return (
 			<section className={styles.container}>
-				<article className={styles.card}>
+				<section className={styles.card}>
 					<figure className={styles.loadingState} aria-busy="true">
 						<span className={styles.loadingSpinner} aria-hidden="true" />
 						<figcaption>Chargement de l'article...</figcaption>
 					</figure>
-				</article>
+				</section>
 			</section>
 		);
 	}
@@ -144,7 +151,7 @@ export default function EditArticle() {
 	return (
 		<>
 			<section className={styles.container} aria-labelledby="edit-title">
-				<article className={styles.card}>
+				<section className={styles.card}>
 					<header className={styles.header}>
 						<h1 id="edit-title" className={styles.title}>
 							Modifier l'article
@@ -166,7 +173,7 @@ export default function EditArticle() {
 						error={error}
 						success={success}
 					/>
-				</article>
+				</section>
 			</section>
 			<Modal
 				isOpen={modal.isOpen}

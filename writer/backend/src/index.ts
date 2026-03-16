@@ -1,60 +1,19 @@
-import "reflect-metadata";
-import cors from "cors";
-import dotenv from "dotenv";
-import type { Request, Response } from "express";
-import express from "express";
-import rateLimit from "express-rate-limit";
-import helmet from "helmet";
+// =============================================================================
+// Point d'entrée — Writer Backend
+// =============================================================================
+//
+// Ce fichier se limite à connecter la base de données et démarrer le serveur.
+// Toute la configuration Express (middlewares, routes) est dans app.ts.
+//
+// Cette séparation permet aux tests d'importer app.ts sans démarrer le serveur.
+//
+// =============================================================================
+
+import app from "./app.js";
 import { connectDB } from "./config/database.js";
 import { logger } from "./config/logger.js";
-import { errorHandler } from "./middlewares/error-handler.middleware.js";
-import routes from "./routes/index.js";
 
-dotenv.config();
-
-const app = express();
 const PORT = process.env.PORT;
-
-app.use(helmet());
-
-app.use(
-	cors({
-		origin: process.env.FRONTEND_URL, // ou FRONT_URL selon ce que tu as dans ton .env
-		credentials: true,
-	}),
-);
-
-app.use(
-	rateLimit({
-		windowMs: 15 * 60 * 1000,
-		limit: 100,
-		standardHeaders: "draft-8",
-		legacyHeaders: false,
-	}),
-);
-
-app.use(express.json({ limit: "1mb" }));
-app.use(express.urlencoded({ extended: true, limit: "1mb" }));
-
-// Routes
-app.use("/api", routes);
-
-app.get("/", (_req: Request, res: Response) => {
-	res.json({
-		message: "Bienvenue sur l'API wm-rajar-ms_writer",
-		status: "running",
-	});
-});
-
-app.get("/health", (_req: Request, res: Response) => {
-	res.json({ status: "ok", timestamp: new Date().toISOString() });
-});
-
-app.use((_req, res) => {
-	res.status(404).json({ error: "Route non trouvée" });
-});
-
-app.use(errorHandler);
 
 const startServer = async () => {
 	try {

@@ -11,7 +11,7 @@ class ArticleRepository {
 	}
 
 	async findById(id: number): Promise<Article | null> {
-		return await this.repository.findOne({
+		return this.repository.findOne({
 			where: { id },
 			relations: ["category"],
 			withDeleted: true,
@@ -19,11 +19,10 @@ class ArticleRepository {
 	}
 
 	async findByTitle(title: string): Promise<Article | null> {
-		return await this.repository.findOneBy({ title });
+		return this.repository.findOneBy({ title });
 	}
 
 	async create(data: CreateArticleDTO): Promise<Article> {
-		// const article = this.repository.create(data);
 		const article = this.repository.create({
 			title: data.title,
 			subtitle: data.subtitle,
@@ -58,7 +57,7 @@ class ArticleRepository {
 			.where("id = :id", { id })
 			.execute();
 
-		return await this.repository.findOne({
+		return this.repository.findOne({
 			where: { id },
 			relations: ["category"],
 			withDeleted: true,

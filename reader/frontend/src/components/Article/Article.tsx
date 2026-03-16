@@ -36,10 +36,10 @@ export default function Article() {
 
 	if (notFound) {
 		return (
-			<div className="article">
+			<section className="article" role="alert">
 				<p>Article inexistant, veuillez retourner à la liste d'articles.</p>
 				<Link to="/">← Retour aux articles</Link>
-			</div>
+			</section>
 		);
 	}
 
@@ -58,9 +58,9 @@ export default function Article() {
 			</Link>
 
 			<header className="article__header">
-				<span className="article__date">
+				<time className="article__date" dateTime={article.publish_date}>
 					Publié le {formatDate(article.publish_date)}
-				</span>
+				</time>
 				<h1 className="article__title">{article.title}</h1>
 				<h2 className="article__subtitle">{article.subtitle}</h2>
 			</header>

@@ -40,14 +40,15 @@ class ApiService {
 			throw new Error(`HTTP error! status: ${response.status}`);
 		}
 
-		return await response.json();
+		return response.json();
 	}
 
 	async get<T>(
 		endpoint: string,
 		params?: Record<string, string | number>,
+		options?: { signal?: AbortSignal },
 	): Promise<T> {
-		return this.request<T>(endpoint, { method: "GET", params });
+		return this.request<T>(endpoint, { method: "GET", params, ...options });
 	}
 
 	async post<T>(
