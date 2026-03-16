@@ -82,8 +82,6 @@ describe("Writer API", () => {
 		});
 
 		it("champs obligatoires manquants → 400", async () => {
-			// Vérifie la validation du CONTROLLER (avant le service).
-			// Le controller fait : if (!title || !subtitle || ...)
 			const res = await request(app).post("/api/articles").send({
 				title: "Seulement un titre",
 			});
@@ -93,9 +91,6 @@ describe("Writer API", () => {
 		});
 
 		it("titre composé uniquement d'espaces → 400", async () => {
-			// Edge case : "   " passe le check du controller (!title est false
-			// car la string n'est pas vide) mais le SERVICE détecte que
-			// title.trim() est vide. Teste le chemin controller → service.
 			const data = buildCreateArticleDTO({ title: "   " });
 
 			const res = await request(app).post("/api/articles").send(data);
@@ -104,19 +99,15 @@ describe("Writer API", () => {
 		});
 
 		it("titre dupliqué → 400", async () => {
-			// ARRANGE : créer un premier article
 			const title = uniqueTitle("Doublon");
 			await request(app)
 				.post("/api/articles")
 				.send(buildCreateArticleDTO({ title }));
 
-			// ACT : tenter de créer un second avec le même titre
 			const res = await request(app)
 				.post("/api/articles")
 				.send(buildCreateArticleDTO({ title }));
 
-			// ASSERT : le service fait un SELECT avant l'INSERT
-			// et détecte le doublon → 400
 			expect(res.status).toBe(400);
 		});
 
@@ -129,10 +120,56 @@ describe("Writer API", () => {
 
 			const res = await request(app).post("/api/articles").send(data);
 
-			// ASSERT : les données renvoyées sont trimées
 			expect(res.status).toBe(201);
 			expect(res.body.data.title).toBe(baseTitle);
 			expect(res.body.data.body).toBe("Contenu avec espaces");
+		});
+
+		// ─── Tests de bornes — longueur max des champs ─────────────────────
+		//
+		// TESTS DE BORNES (boundary testing) :
+		// On teste la valeur exacte à la frontière d'une règle de validation.
+		// Le service fait : if (data.title.length > 300) → erreur.
+		// Donc 300 doit passer, 301 doit échouer. C'est là que se cachent
+		// les bugs off-by-one (> vs >=, < vs <=).
+		//
+		// TESTS PARAMÉTRÉS (it.each) :
+		// Au lieu d'écrire 3 tests identiques qui ne diffèrent que par le
+		// nom du champ et la longueur, on factorise avec un tableau de cas.
+		// Vitest exécute le même bloc pour chaque ligne du tableau.
+		// %s et %i sont remplacés par les valeurs dans le nom du test.
+		//
+
+		it.each([
+			["title", 300],
+			["subtitle", 300],
+			["subhead", 1000],
+		])("%s à la limite (%i chars) → 201", async (field, maxLength) => {
+			const value = "a".repeat(maxLength);
+			const data = buildCreateArticleDTO({
+				title: uniqueTitle(`Borne-${field}`),
+				[field]: value,
+			});
+
+			const res = await request(app).post("/api/articles").send(data);
+
+			expect(res.status).toBe(201);
+		});
+
+		it.each([
+			["title", 301],
+			["subtitle", 301],
+			["subhead", 1001],
+		])("%s au-delà de la limite (%i chars) → 400", async (field, overLimit) => {
+			const value = "a".repeat(overLimit);
+			const data = buildCreateArticleDTO({
+				title: uniqueTitle(`Borne-${field}`),
+				[field]: value,
+			});
+
+			const res = await request(app).post("/api/articles").send(data);
+
+			expect(res.status).toBe(400);
 		});
 	});
 
@@ -140,16 +177,12 @@ describe("Writer API", () => {
 
 	describe("GET /api/articles", () => {
 		it("articles existants → 200 + structure { articles, pagination }", async () => {
-			// ARRANGE
 			await request(app)
 				.post("/api/articles")
 				.send(buildCreateArticleDTO({ title: uniqueTitle("List-1") }));
 
-			// ACT
 			const res = await request(app).get("/api/articles");
 
-			// ASSERT : vérifie la structure de réponse (notre contrat d'API),
-			// pas le comptage (qui revient à tester TypeORM).
 			expect(res.status).toBe(200);
 			expect(Array.isArray(res.body.articles)).toBe(true);
 			expect(res.body.articles.length).toBeGreaterThanOrEqual(1);
@@ -168,7 +201,6 @@ describe("Writer API", () => {
 
 	describe("GET /api/articles/:id", () => {
 		it("article existant → 200 + données complètes", async () => {
-			// ARRANGE : créer un article pour avoir un id valide
 			const title = uniqueTitle("GET-200");
 			const created = await request(app)
 				.post("/api/articles")
@@ -193,7 +225,6 @@ describe("Writer API", () => {
 
 	describe("PATCH /api/articles/:id", () => {
 		it("titre modifié → 200 + update_date renseigné", async () => {
-			// ARRANGE
 			const title = uniqueTitle("PATCH-avant");
 			const created = await request(app)
 				.post("/api/articles")
@@ -201,13 +232,10 @@ describe("Writer API", () => {
 			const articleId = created.body.data.id;
 			const newTitle = uniqueTitle("PATCH-après");
 
-			// ACT
 			const res = await request(app)
 				.patch(`/api/articles/${articleId}`)
 				.send({ title: newTitle });
 
-			// ASSERT : le titre a changé ET update_date a été renseigné
-			// (logique métier du service, vérifiée de bout en bout)
 			expect(res.status).toBe(200);
 			expect(res.body.message).toBe("Article mis à jour avec succès");
 			expect(res.body.data.update_date).not.toBeNull();
@@ -218,17 +246,14 @@ describe("Writer API", () => {
 
 	describe("PATCH soft-delete et restore", () => {
 		it("soft-delete → article exclu des résultats de recherche", async () => {
-			// ARRANGE
 			const keyword = `SoftDel${Date.now()}`;
 			const created = await request(app)
 				.post("/api/articles")
 				.send(buildCreateArticleDTO({ title: keyword }));
 			const articleId = created.body.data.id;
 
-			// ACT
 			await request(app).patch(`/api/articles/${articleId}/delete`);
 
-			// ASSERT : l'article n'apparaît plus dans la recherche
 			const searchRes = await request(app).get(
 				`/api/articles/search?q=${keyword}`,
 			);
@@ -236,7 +261,6 @@ describe("Writer API", () => {
 		});
 
 		it("restore après soft-delete → 200 + article ré-accessible", async () => {
-			// ARRANGE : créer puis soft-delete (précondition)
 			const title = uniqueTitle("Restore");
 			const created = await request(app)
 				.post("/api/articles")
@@ -245,12 +269,10 @@ describe("Writer API", () => {
 
 			await request(app).patch(`/api/articles/${articleId}/delete`);
 
-			// ACT
 			const restoreRes = await request(app).patch(
 				`/api/articles/${articleId}/restore`,
 			);
 
-			// ASSERT
 			expect(restoreRes.status).toBe(200);
 			expect(restoreRes.body.message).toBe("Article restoré avec succès");
 
@@ -264,7 +286,6 @@ describe("Writer API", () => {
 
 	describe("GET /api/articles/search", () => {
 		it("mot-clé existant → articles correspondants", async () => {
-			// ARRANGE : créer un article avec un mot-clé unique
 			const keyword = `Unique${Date.now()}`;
 			await request(app)
 				.post("/api/articles")
