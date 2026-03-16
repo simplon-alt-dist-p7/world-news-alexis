@@ -17,14 +17,7 @@ export const errorHandler = (
 			method: req.method,
 		});
 
-		return res.status(err.statusCode).json({
-			status: "error",
-			statusCode: err.statusCode,
-			message: err.message,
-			timestamp: new Date().toISOString(),
-			path: req.url,
-			...(process.env.NODE_ENV === "development" && { stack: err.stack }),
-		});
+		return res.status(err.statusCode).json({ error: err.message });
 	}
 
 	logger.error({
@@ -35,15 +28,5 @@ export const errorHandler = (
 		method: req.method,
 	});
 
-	return res.status(500).json({
-		status: "error",
-		statusCode: 500,
-		message: "Une erreur interne est survenue",
-		timestamp: new Date().toISOString(),
-		path: req.url,
-		...(process.env.NODE_ENV === "development" && {
-			stack: err.stack,
-			details: err.message,
-		}),
-	});
+	return res.status(500).json({ error: "Une erreur interne est survenue" });
 };

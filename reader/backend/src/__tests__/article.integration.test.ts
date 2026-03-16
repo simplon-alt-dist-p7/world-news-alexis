@@ -73,7 +73,7 @@ describe("Reader API", () => {
 
 			// ASSERT
 			expect(res.status).toBe(404);
-			expect(res.body.message).toBe("Article non trouvé");
+			expect(res.body.error).toBe("Article non trouvé");
 		});
 	});
 });

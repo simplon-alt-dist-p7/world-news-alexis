@@ -16,13 +16,6 @@
 	color: var(--color-blue-medium);
 }
 
-.error {
-	text-align: center;
-	padding: 2rem;
-	color: #c0392b;
-	font-family: var(--font-text);
-}
-
 .empty-state {
 	text-align: center;
 	padding: 3rem 1rem;
