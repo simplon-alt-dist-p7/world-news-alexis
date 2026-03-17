@@ -21,6 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GEMINI_API_KEY: test-key-ci
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       # ── 1. Récupérer le code ───────────────────────────────────────────
