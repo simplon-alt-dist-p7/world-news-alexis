@@ -86,8 +86,29 @@ jobs:
       # Ré-injecter les données de seed car les tests d'intégration
       # font un TRUNCATE après chaque test (isolation). Sans ça,
       # les E2E ne trouvent aucun article à afficher.
+      #
+      # POURQUOI REFRESH MATERIALIZED VIEW ?
+      #
+      # Le reader ne lit pas directement writer.t_articles. Il utilise
+      # reader.v_articles, une vue matérialisée (= un snapshot figé des
+      # données). Contrairement à une vue classique, elle ne se met pas
+      # à jour automatiquement quand les données source changent.
+      #
+      # En temps normal, un trigger AFTER INSERT/UPDATE/DELETE sur
+      # writer.t_articles appelle REFRESH MATERIALIZED VIEW. Mais
+      # TRUNCATE ne déclenche PAS les triggers ligne par ligne en
+      # PostgreSQL. Résultat : après le TRUNCATE des tests d'intégration,
+      # la vue est désynchronisée.
+      #
+      # On force donc un REFRESH après le reseed pour que le reader
+      # voie les articles fraîchement réinsérés.
+      #
       - name: Reseed test database
-        run: docker compose -f docker-compose.test.yml exec -T db-test psql -U postgres -d worldnews_test -f /docker-entrypoint-initdb.d/03-seed.sql
+        run: |
+          docker compose -f docker-compose.test.yml exec -T db-test \
+            psql -U postgres -d worldnews_test \
+            -f /docker-entrypoint-initdb.d/03-seed.sql \
+            -c "REFRESH MATERIALIZED VIEW reader.v_articles; REFRESH MATERIALIZED VIEW reader.v_categories;"
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
