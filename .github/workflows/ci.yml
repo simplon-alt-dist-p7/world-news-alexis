@@ -83,13 +83,19 @@ jobs:
       # puis exécute les scénarios de navigation.
       #
 
+      # Ré-injecter les données de seed car les tests d'intégration
+      # font un TRUNCATE après chaque test (isolation). Sans ça,
+      # les E2E ne trouvent aucun article à afficher.
+      - name: Reseed test database
+        run: docker exec world-news-db-test-1 psql -U postgres -d worldnews_test -f /docker-entrypoint-initdb.d/03-seed.sql
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
         working-directory: writer/frontend
 
       - name: Start backend APIs for E2E
         run: |
-          # Construire DATABASE_URL dynamiquement (évite d'exposer un connection string en dur)
+          # Construire DATABASE_URL dynamiquement (évite d'exposer une chaîne de connexion en dur)
           export DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
 
           (cd writer/backend && PORT=3000 npx tsx src/index.ts) &
