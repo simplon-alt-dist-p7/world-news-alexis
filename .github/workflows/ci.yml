@@ -119,8 +119,10 @@ jobs:
           # Construire DATABASE_URL dynamiquement (évite d'exposer une chaîne de connexion en dur)
           export DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
 
-          (cd writer/backend && PORT=3000 npx tsx src/index.ts) &
-          (cd reader/backend && PORT=3001 npx tsx src/index.ts) &
+          # FRONTEND_URL différent pour chaque backend (CORS)
+          # Writer frontend = 5173, Reader frontend = 5174
+          (cd writer/backend && PORT=3000 FRONTEND_URL=http://localhost:5173 npx tsx src/index.ts) &
+          (cd reader/backend && PORT=3001 FRONTEND_URL=http://localhost:5174 npx tsx src/index.ts) &
 
           # Attendre que les deux APIs répondent (max 30s)
           for port in 3000 3001; do
@@ -131,7 +133,6 @@ jobs:
           done
         env:
           NODE_ENV: test
-          FRONTEND_URL: http://localhost:5173
           DB_HOST: localhost
           DB_PORT: 5433
           DB_NAME: worldnews_test
