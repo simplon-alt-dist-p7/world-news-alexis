@@ -21,6 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GEMINI_API_KEY: test-key-ci
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       # ── 1. Récupérer le code ───────────────────────────────────────────
@@ -71,7 +72,85 @@ jobs:
       - name: Test reader frontend
         run: npm test --prefix reader/frontend
 
-      # ── 9. Cleanup ────────────────────────────────────────────────────
+      # ── 9. Tests E2E (Playwright) ──────────────────────────────────────
+      #
+      # Les tests E2E simulent de vrais parcours utilisateur dans un navigateur.
+      # Contrairement aux tests unitaires/intégration qui importent le code
+      # directement, les E2E ont besoin de la stack complète qui tourne :
+      #   DB (déjà démarrée) → APIs backend → Serveurs Vite frontend → Navigateur
+      #
+      # Playwright installe Chromium en headless (sans interface graphique),
+      # démarre automatiquement les serveurs Vite via sa config `webServer`,
+      # puis exécute les scénarios de navigation.
+      #
+
+      # Ré-injecter les données de seed car les tests d'intégration
+      # font un TRUNCATE après chaque test (isolation). Sans ça,
+      # les E2E ne trouvent aucun article à afficher.
+      #
+      # POURQUOI REFRESH MATERIALIZED VIEW ?
+      #
+      # Le reader ne lit pas directement writer.t_articles. Il utilise
+      # reader.v_articles, une vue matérialisée (= un snapshot figé des
+      # données). Contrairement à une vue classique, elle ne se met pas
+      # à jour automatiquement quand les données source changent.
+      #
+      # En temps normal, un trigger AFTER INSERT/UPDATE/DELETE sur
+      # writer.t_articles appelle REFRESH MATERIALIZED VIEW. Mais
+      # TRUNCATE ne déclenche PAS les triggers ligne par ligne en
+      # PostgreSQL. Résultat : après le TRUNCATE des tests d'intégration,
+      # la vue est désynchronisée.
+      #
+      # On force donc un REFRESH après le reseed pour que le reader
+      # voie les articles fraîchement réinsérés.
+      #
+      - name: Reseed test database
+        run: |
+          docker compose -f docker-compose.test.yml exec -T db-test \
+            psql -U postgres -d worldnews_test \
+            -f /docker-entrypoint-initdb.d/03-seed.sql \
+            -c "REFRESH MATERIALIZED VIEW reader.v_articles; REFRESH MATERIALIZED VIEW reader.v_categories;"
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: writer/frontend
+
+      - name: Start backend APIs for E2E
+        run: |
+          # Construire DATABASE_URL dynamiquement (évite d'exposer une chaîne de connexion en dur)
+          export DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+
+          # FRONTEND_URL différent pour chaque backend (CORS)
+          # Writer frontend = 5173, Reader frontend = 5174
+          (cd writer/backend && PORT=3000 FRONTEND_URL=http://localhost:5173 npx tsx src/index.ts) &
+          (cd reader/backend && PORT=3001 FRONTEND_URL=http://localhost:5174 npx tsx src/index.ts) &
+
+          # Attendre que les deux APIs répondent (max 30s)
+          for port in 3000 3001; do
+            for i in $(seq 1 30); do
+              curl -sf http://localhost:$port > /dev/null 2>&1 && break
+              sleep 1
+            done
+          done
+        env:
+          NODE_ENV: test
+          DB_HOST: localhost
+          DB_PORT: 5433
+          DB_NAME: worldnews_test
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+
+      - name: E2E writer frontend
+        run: npm run test:e2e --prefix writer/frontend
+        env:
+          VITE_API_URL: http://localhost:3000/api
+
+      - name: E2E reader frontend
+        run: npm run test:e2e --prefix reader/frontend
+        env:
+          VITE_API_URL: http://localhost:3001
+
+      # ── 10. Cleanup ───────────────────────────────────────────────────
       - name: Stop test database
         if: always()
         run: npm run test:db:down
