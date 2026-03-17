@@ -87,7 +87,7 @@ jobs:
       # font un TRUNCATE après chaque test (isolation). Sans ça,
       # les E2E ne trouvent aucun article à afficher.
       - name: Reseed test database
-        run: docker exec world-news-db-test-1 psql -U postgres -d worldnews_test -f /docker-entrypoint-initdb.d/03-seed.sql
+        run: docker compose -f docker-compose.test.yml exec -T db-test psql -U postgres -d worldnews_test -f /docker-entrypoint-initdb.d/03-seed.sql
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
