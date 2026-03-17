@@ -71,7 +71,57 @@ jobs:
       - name: Test reader frontend
         run: npm test --prefix reader/frontend
 
-      # ── 9. Cleanup ────────────────────────────────────────────────────
+      # ── 9. Tests E2E (Playwright) ──────────────────────────────────────
+      #
+      # Les tests E2E simulent de vrais parcours utilisateur dans un navigateur.
+      # Contrairement aux tests unitaires/intégration qui importent le code
+      # directement, les E2E ont besoin de la stack complète qui tourne :
+      #   DB (déjà démarrée) → APIs backend → Serveurs Vite frontend → Navigateur
+      #
+      # Playwright installe Chromium en headless (sans interface graphique),
+      # démarre automatiquement les serveurs Vite via sa config `webServer`,
+      # puis exécute les scénarios de navigation.
+      #
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: writer/frontend
+
+      - name: Start backend APIs for E2E
+        run: |
+          # Construire DATABASE_URL dynamiquement (évite d'exposer un connection string en dur)
+          export DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+
+          (cd writer/backend && PORT=3000 npx tsx src/index.ts) &
+          (cd reader/backend && PORT=3001 npx tsx src/index.ts) &
+
+          # Attendre que les deux APIs répondent (max 30s)
+          for port in 3000 3001; do
+            for i in $(seq 1 30); do
+              curl -sf http://localhost:$port > /dev/null 2>&1 && break
+              sleep 1
+            done
+          done
+        env:
+          NODE_ENV: test
+          FRONTEND_URL: http://localhost:5173
+          DB_HOST: localhost
+          DB_PORT: 5433
+          DB_NAME: worldnews_test
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+
+      - name: E2E writer frontend
+        run: npm run test:e2e --prefix writer/frontend
+        env:
+          VITE_API_URL: http://localhost:3000/api
+
+      - name: E2E reader frontend
+        run: npm run test:e2e --prefix reader/frontend
+        env:
+          VITE_API_URL: http://localhost:3001
+
+      # ── 10. Cleanup ───────────────────────────────────────────────────
       - name: Stop test database
         if: always()
         run: npm run test:db:down
