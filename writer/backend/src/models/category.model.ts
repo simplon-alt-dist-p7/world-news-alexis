@@ -1,5 +1,4 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
-import { Article } from "./article.model.js";
+import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity({ name: "t_categories", schema: "writer" })
 export class Category {
@@ -8,10 +7,4 @@ export class Category {
 
 	@Column({ type: "varchar", length: 50 })
 	title!: string;
-
-	@OneToMany(
-		() => Article,
-		(article) => article.category,
-	)
-	articles!: Article[];
 }

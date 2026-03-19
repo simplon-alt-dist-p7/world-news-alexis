@@ -2,10 +2,7 @@ import {
 	type GenerativeModel,
 	GoogleGenerativeAI,
 } from "@google/generative-ai";
-import dotenv from "dotenv";
 import { ValidationError } from "../errors/validation.error.js";
-
-dotenv.config();
 
 class GeminiService {
 	private model: GenerativeModel;

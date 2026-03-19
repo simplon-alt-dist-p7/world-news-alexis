@@ -5,7 +5,6 @@ export type ArticleType = {
 	id: number;
 	title: string;
 	subtitle: string;
-	subhead: string;
 	publish_date: string;
 	update_date: string | null;
 	deletedAt: string | null;
