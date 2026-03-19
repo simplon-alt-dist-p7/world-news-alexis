@@ -10,6 +10,9 @@ class ArticlesService {
 				subhead: true,
 				publish_date: true,
 			},
+			where: {
+				delete_date: null,
+			},
 			orderBy: {
 				publish_date: "desc",
 			},
@@ -18,8 +21,8 @@ class ArticlesService {
 	}
 
 	async getById(id: number) {
-		return prisma.article.findUnique({
-			where: { id },
+		return prisma.article.findFirst({
+			where: { id, delete_date: null },
 		});
 	}
 }
