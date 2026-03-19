@@ -199,6 +199,7 @@ services:
       - ./writer/frontend/tsconfig.json:/app/tsconfig.json
       - ./writer/frontend/tsconfig.app.json:/app/tsconfig.app.json
       - ./writer/frontend/tsconfig.node.json:/app/tsconfig.node.json
+      - ./writer/frontend/tsconfig.test.json:/app/tsconfig.test.json
       # Volume anonyme pour protéger les node_modules du conteneur.
       - /app/node_modules
     depends_on:
@@ -224,6 +225,7 @@ services:
       - ./reader/frontend/tsconfig.json:/app/tsconfig.json
       - ./reader/frontend/tsconfig.app.json:/app/tsconfig.app.json
       - ./reader/frontend/tsconfig.node.json:/app/tsconfig.node.json
+      - ./reader/frontend/tsconfig.test.json:/app/tsconfig.test.json
       # Volume anonyme pour protéger les node_modules du conteneur.
       - /app/node_modules
     depends_on:
