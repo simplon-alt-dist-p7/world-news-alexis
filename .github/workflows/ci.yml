@@ -182,12 +182,10 @@ jobs:
 
       - name: Deploy writer frontend (Vercel)
         run: vercel --prod --yes
-        working-directory: writer/frontend
         env:
           VERCEL_PROJECT_ID: prj_QDMqslGxSSmnqBBa0TYHADhvGR5q
 
       - name: Deploy reader frontend (Vercel)
         run: vercel --prod --yes
-        working-directory: reader/frontend
         env:
           VERCEL_PROJECT_ID: prj_C8VZV7RiQJPLql6a1LTCDSXjqy0x
