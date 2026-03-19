@@ -34,13 +34,9 @@ export class Article {
 	@DeleteDateColumn({ name: "delete_date" })
 	deletedAt!: Date | null;
 
-	@ManyToOne(
-		() => Category,
-		(category) => category.articles,
-		{
-			nullable: false,
-		},
-	)
+	@ManyToOne(() => Category, {
+		nullable: false,
+	})
 	@JoinColumn({ name: "category_id" })
 	category!: Category;
 }

@@ -1,11 +1,4 @@
-interface LoggerInterface {
-	error(message: string | object): void;
-	warn(message: string | object): void;
-	info(message: string | object): void;
-	debug(message: string | object): void;
-}
-
-class SimpleLogger implements LoggerInterface {
+class SimpleLogger {
 	private log(
 		output: (msg: string, ...args: unknown[]) => void,
 		level: string,
@@ -24,19 +17,9 @@ class SimpleLogger implements LoggerInterface {
 		this.log(console.error, "ERROR", message);
 	}
 
-	warn(message: string | object): void {
-		this.log(console.warn, "WARN", message);
-	}
-
 	info(message: string | object): void {
 		if (process.env.NODE_ENV !== "production") {
 			this.log(console.log, "INFO", message);
-		}
-	}
-
-	debug(message: string | object): void {
-		if (process.env.NODE_ENV === "development") {
-			this.log(console.log, "DEBUG", message);
 		}
 	}
 }
