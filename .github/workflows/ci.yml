@@ -162,15 +162,32 @@ jobs:
     needs: ci
     if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: team_jpJ2QAtscpzU1aCdaFzHIhCK
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Render (backends) — deploy hooks ──
       - name: Deploy writer backend (Render)
         run: curl -sf "${{ secrets.RENDER_DEPLOY_HOOK_WRITER }}"
 
       - name: Deploy reader backend (Render)
         run: curl -sf "${{ secrets.RENDER_DEPLOY_HOOK_READER }}"
 
+      # ── Vercel (frontends) — CLI ──
+      - name: Install Vercel CLI
+        run: npm i -g vercel
+
       - name: Deploy writer frontend (Vercel)
-        run: curl -sf "${{ secrets.VERCEL_DEPLOY_HOOK_WRITER }}"
+        run: vercel --prod --yes
+        working-directory: writer/frontend
+        env:
+          VERCEL_PROJECT_ID: prj_QDMqslGxSSmnqBBa0TYHADhvGR5q
 
       - name: Deploy reader frontend (Vercel)
-        run: curl -sf "${{ secrets.VERCEL_DEPLOY_HOOK_READER }}"
+        run: vercel --prod --yes
+        working-directory: reader/frontend
+        env:
+          VERCEL_PROJECT_ID: prj_C8VZV7RiQJPLql6a1LTCDSXjqy0x
