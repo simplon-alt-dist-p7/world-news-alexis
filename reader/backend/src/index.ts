@@ -1,54 +1,29 @@
-import dotenv from "dotenv";
-import express from "express";
-import cors from "cors";
-import helmet from "helmet";
-import rateLimit from "express-rate-limit";
-import articlesRoutes from "./routes/article.route.js";
+// =============================================================================
+// Point d'entrée — Reader Backend
+// =============================================================================
+//
+// Ce fichier se limite à démarrer le serveur HTTP.
+// Toute la configuration Express (middlewares, routes) est dans app.ts.
+//
+// Cette séparation permet aux tests d'importer app.ts sans démarrer le serveur.
+//
+// =============================================================================
+
+import app from "./app.js";
 import { logger } from "./config/logger.js";
-import { errorHandler } from "./middlewares/error-handler.middleware.js";
 
-dotenv.config();
-
-const app = express();
-const PORT = process.env["PORT"];
-
-app.use(helmet());
-
-app.use(
-  cors({
-    origin: process.env["FRONTEND_URL"],
-    methods: ["GET"],
-    credentials: true,
-  })
-);
-
-app.use(rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 100,
-  standardHeaders: "draft-8",
-  legacyHeaders: false,
-}));
-
-app.use(express.json({ limit: "1mb" }));
-
-app.use("/articles", articlesRoutes);
-
-app.use((_req, res) => {
-  res.status(404).json({ error: "Route non trouvée" });
-});
-
-app.use(errorHandler);
+const PORT = process.env.PORT;
 
 const server = app.listen(PORT, () => {
-  logger.info(`Serveur démarré sur http://localhost:${PORT}`);
+	logger.info(`Serveur démarré sur http://localhost:${PORT}`);
 });
 
-const shutdown = async () => {
-  logger.info("Arrêt du serveur...");
-  server.close(() => {
-    logger.info("Serveur arrêté.");
-    process.exit(0);
-  });
+const shutdown = () => {
+	logger.info("Arrêt du serveur...");
+	server.close(() => {
+		logger.info("Serveur arrêté.");
+		process.exit(0);
+	});
 };
 
 process.on("SIGTERM", shutdown);

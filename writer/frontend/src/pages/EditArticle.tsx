@@ -1,177 +1,187 @@
-import { useState, useEffect } from "react";
 import type { FormEvent } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { articleService } from "../services/article.service";
-import { useCategories } from "../contexts/CategoryContext";
-import type { Article } from "../types/article.types";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import ArticleForm from "../components/ArticleForm/ArticleForm";
 import Modal from "../components/Modal/Modal";
+import { useCategories } from "../contexts/CategoryContext";
+import { articleService } from "../services/article.service";
+import type { Article } from "../types/article.types";
 import styles from "./EditArticle.module.css";
 
 export default function EditArticle() {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const { categories, loading: categoriesLoading } = useCategories();
+	const { id } = useParams<{ id: string }>();
+	const navigate = useNavigate();
+	const { categories, loading: categoriesLoading } = useCategories();
 
-  const [formData, setFormData] = useState({
-    title: "",
-    subtitle: "",
-    subhead: "",
-    body: "",
-    category_id: 0,
-  });
+	const [formData, setFormData] = useState({
+		title: "",
+		subtitle: "",
+		subhead: "",
+		body: "",
+		category_id: 0,
+	});
 
-  const [loading, setLoading] = useState(false);
-  const [loadingArticle, setLoadingArticle] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const [modal, setModal] = useState<{
-    isOpen: boolean;
-    title: string;
-    message: string;
-    type: "success" | "error" | "info";
-  }>({ isOpen: false, title: "", message: "", type: "info" });
+	const [loading, setLoading] = useState(false);
+	const [loadingArticle, setLoadingArticle] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+	const [success, setSuccess] = useState(false);
+	const [modal, setModal] = useState<{
+		isOpen: boolean;
+		title: string;
+		message: string;
+		type: "success" | "error" | "info";
+	}>({ isOpen: false, title: "", message: "", type: "info" });
 
-  useEffect(() => {
-    const loadArticle = async () => {
-      if (!id) {
-        setError("ID d'article manquant");
-        setLoadingArticle(false);
-        return;
-      }
+	useEffect(() => {
+		const controller = new AbortController();
 
-      try {
-        const response = await articleService.getArticleById(Number(id));
-        const article = response.data;
-        setFormData({
-          title: article.title,
-          subtitle: article.subtitle,
-          subhead: article.subhead,
-          body: article.body,
-          category_id: article.category?.id || 0,
-        });
-      } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Erreur lors du chargement de l'article"
-        );
-      } finally {
-        setLoadingArticle(false);
-      }
-    };
+		const loadArticle = async () => {
+			if (!id) {
+				setError("ID d'article manquant");
+				setLoadingArticle(false);
+				return;
+			}
 
-    loadArticle();
-  }, [id]);
+			try {
+				const response = await articleService.getArticleById(
+					Number(id),
+					controller.signal,
+				);
+				const article = response.data;
+				setFormData({
+					title: article.title,
+					subtitle: article.subtitle,
+					subhead: article.subhead,
+					body: article.body,
+					category_id: article.category?.id || 0,
+				});
+			} catch (err) {
+				if (err instanceof Error && err.name === "AbortError") return;
+				setError(
+					err instanceof Error
+						? err.message
+						: "Erreur lors du chargement de l'article",
+				);
+			} finally {
+				setLoadingArticle(false);
+			}
+		};
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setSuccess(false);
+		loadArticle();
+		return () => controller.abort();
+	}, [id]);
 
-    if (!id) {
-      setError("ID d'article manquant");
-      return;
-    }
+	const handleSubmit = async (e: FormEvent) => {
+		e.preventDefault();
+		setError(null);
+		setSuccess(false);
 
-    const hasChanges = Object.values(formData).some(
-      (value) => typeof value === "string" ? value.trim() !== "" : value !== 0
-    );
-    if (!hasChanges) {
-      setError("Veuillez modifier au moins un champ");
-      return;
-    }
+		if (!id) {
+			setError("ID d'article manquant");
+			return;
+		}
 
-    const updateData: Partial<Article> = {};
-    if (formData.title.trim()) updateData.title = formData.title.trim();
-    if (formData.subtitle.trim())
-      updateData.subtitle = formData.subtitle.trim();
-    if (formData.subhead.trim()) updateData.subhead = formData.subhead.trim();
-    if (formData.body.trim()) updateData.body = formData.body.trim();
-    if (formData.category_id) updateData.category_id = formData.category_id;
+		const hasChanges = Object.values(formData).some((value) =>
+			typeof value === "string" ? value.trim() !== "" : value !== 0,
+		);
+		if (!hasChanges) {
+			setError("Veuillez modifier au moins un champ");
+			return;
+		}
 
-    setLoading(true);
+		const updateData: Partial<Article> = {};
+		if (formData.title.trim()) updateData.title = formData.title.trim();
+		if (formData.subtitle.trim())
+			updateData.subtitle = formData.subtitle.trim();
+		if (formData.subhead.trim()) updateData.subhead = formData.subhead.trim();
+		if (formData.body.trim()) updateData.body = formData.body.trim();
+		if (formData.category_id) updateData.category_id = formData.category_id;
 
-    try {
-      await articleService.updateArticle(
-        Number(id),
-        updateData
-      );
-      setSuccess(true);
-      setModal({
-        isOpen: true,
-        title: "Article mis à jour",
-        message: "L'article a été modifié avec succès. La date de modification a été enregistrée.",
-        type: "success",
-      });
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Erreur lors de la mise à jour";
-      setError(errorMessage);
-      setModal({
-        isOpen: true,
-        title: "Erreur",
-        message: errorMessage,
-        type: "error",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+		setLoading(true);
 
-  const handleCancel = () => {
-    navigate("/articles");
-  };
+		try {
+			await articleService.updateArticle(Number(id), updateData);
+			setSuccess(true);
+			setModal({
+				isOpen: true,
+				title: "Article mis à jour",
+				message:
+					"L'article a été modifié avec succès. La date de modification a été enregistrée.",
+				type: "success",
+			});
+		} catch (err) {
+			const errorMessage =
+				err instanceof Error ? err.message : "Erreur lors de la mise à jour";
+			setError(errorMessage);
+			setModal({
+				isOpen: true,
+				title: "Erreur",
+				message: errorMessage,
+				type: "error",
+			});
+		} finally {
+			setLoading(false);
+		}
+	};
 
-  const handleCloseModal = () => {
-    setModal({ ...modal, isOpen: false });
-    if (success) {
-      navigate("/articles");
-    }
-  };
+	const handleCancel = () => {
+		navigate("/articles");
+	};
 
-  if (loadingArticle) {
-    return (
-      <section className={styles.container}>
-        <article className={styles.card}>
-          <figure className={styles.loadingState} aria-busy="true">
-            <span className={styles.loadingSpinner} aria-hidden="true" />
-            <figcaption>Chargement de l'article...</figcaption>
-          </figure>
-        </article>
-      </section>
-    );
-  }
+	const handleCloseModal = () => {
+		setModal({ ...modal, isOpen: false });
+		if (success) {
+			navigate("/articles");
+		}
+	};
 
-  return (
-    <>
-      <section className={styles.container} aria-labelledby="edit-title">
-        <article className={styles.card}>
-          <header className={styles.header}>
-            <h1 id="edit-title" className={styles.title}>Modifier l'article</h1>
-            <p className={styles.subtitle}>Modifiez les champs que vous souhaitez mettre à jour</p>
-          </header>
+	if (loadingArticle) {
+		return (
+			<section className={styles.container}>
+				<section className={styles.card}>
+					<figure className={styles.loadingState} aria-busy="true">
+						<span className={styles.loadingSpinner} aria-hidden="true" />
+						<figcaption>Chargement de l'article...</figcaption>
+					</figure>
+				</section>
+			</section>
+		);
+	}
 
-          <ArticleForm
-            formData={formData}
-            onFormDataChange={setFormData}
-            categories={categories}
-            categoriesLoading={categoriesLoading}
-            onSubmit={handleSubmit}
-            onCancel={handleCancel}
-            loading={loading}
-            submitLabel="Mettre à jour"
-            error={error}
-            success={success}
-          />
-        </article>
-      </section>
-      <Modal
-        isOpen={modal.isOpen}
-        onClose={handleCloseModal}
-        title={modal.title}
-        message={modal.message}
-        type={modal.type}
-      />
-    </>
-  );
+	return (
+		<>
+			<section className={styles.container} aria-labelledby="edit-title">
+				<section className={styles.card}>
+					<header className={styles.header}>
+						<h1 id="edit-title" className={styles.title}>
+							Modifier l'article
+						</h1>
+						<p className={styles.subtitle}>
+							Modifiez les champs que vous souhaitez mettre à jour
+						</p>
+					</header>
+
+					<ArticleForm
+						formData={formData}
+						onFormDataChange={setFormData}
+						categories={categories}
+						categoriesLoading={categoriesLoading}
+						onSubmit={handleSubmit}
+						onCancel={handleCancel}
+						loading={loading}
+						submitLabel="Mettre à jour"
+						error={error}
+						success={success}
+					/>
+				</section>
+			</section>
+			<Modal
+				isOpen={modal.isOpen}
+				onClose={handleCloseModal}
+				title={modal.title}
+				message={modal.message}
+				type={modal.type}
+			/>
+		</>
+	);
 }
