@@ -1,7 +1,7 @@
 .article-card-link {
 	text-decoration: none;
 	color: inherit;
-	display: block;
+	display: flex;
 }
 
 .article-card {
@@ -12,6 +12,7 @@
 	display: flex;
 	flex-direction: column;
 	gap: 0.75rem;
+	flex: 1;
 	cursor: pointer;
 	transition:
 		box-shadow 0.2s ease,
