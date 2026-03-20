@@ -6,7 +6,7 @@
 # sur chaque push et pull request.
 #
 # CD : Déclenche le déploiement sur Render et Vercel uniquement après que
-# la CI soit verte et uniquement sur push vers dev.
+# la CI soit verte et uniquement sur push vers main.
 # =============================================================================
 
 name: CI/CD
@@ -156,11 +156,11 @@ jobs:
         run: npm run test:db:down
 
   # ===========================================================================
-  # CD — Déploiement (uniquement sur push vers dev, après CI verte)
+  # CD — Déploiement (uniquement sur push vers main, après CI verte)
   # ===========================================================================
   deploy:
     needs: ci
-    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
