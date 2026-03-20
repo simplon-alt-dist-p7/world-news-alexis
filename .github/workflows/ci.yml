@@ -1,15 +1,15 @@
 # =============================================================================
-# GitHub Actions — Pipeline CI
+# GitHub Actions — Pipeline CI/CD
 # =============================================================================
 #
-# Exécute le linter (Biome) et les tests (unitaires + intégration) sur chaque
-# push et pull request. Le pipeline bloque le merge en cas d'échec.
+# CI : Exécute le linter (Biome) et les tests (unitaires + intégration + E2E)
+# sur chaque push et pull request.
 #
-# La base de données de test est lancée via docker compose (même config qu'en
-# local) avec tmpfs pour la rapidité.
+# CD : Déclenche le déploiement sur Render et Vercel uniquement après que
+# la CI soit verte et uniquement sur push vers dev.
 # =============================================================================
 
-name: CI
+name: CI/CD
 
 on:
   push:
@@ -154,3 +154,38 @@ jobs:
       - name: Stop test database
         if: always()
         run: npm run test:db:down
+
+  # ===========================================================================
+  # CD — Déploiement (uniquement sur push vers dev, après CI verte)
+  # ===========================================================================
+  deploy:
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: team_jpJ2QAtscpzU1aCdaFzHIhCK
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Render (backends) — deploy hooks ──
+      - name: Deploy writer backend (Render)
+        run: curl -sf "${{ secrets.RENDER_DEPLOY_HOOK_WRITER }}"
+
+      - name: Deploy reader backend (Render)
+        run: curl -sf "${{ secrets.RENDER_DEPLOY_HOOK_READER }}"
+
+      # ── Vercel (frontends) — CLI ──
+      - name: Install Vercel CLI
+        run: npm i -g vercel
+
+      - name: Deploy writer frontend (Vercel)
+        run: vercel --prod --yes
+        env:
+          VERCEL_PROJECT_ID: prj_QDMqslGxSSmnqBBa0TYHADhvGR5q
+
+      - name: Deploy reader frontend (Vercel)
+        run: vercel --prod --yes
+        env:
+          VERCEL_PROJECT_ID: prj_C8VZV7RiQJPLql6a1LTCDSXjqy0x
