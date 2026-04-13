@@ -3,6 +3,7 @@ import express from "express";
 import helmet from "helmet";
 import { errorHandler } from "./middlewares/error-handler.middleware.js";
 import articlesRoutes from "./routes/article.route.js";
+import healthRoutes from "./routes/health.route.js";
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use(
 	}),
 );
 
+app.use(healthRoutes);
 app.use("/articles", articlesRoutes);
 
 app.use((_req, res) => {
